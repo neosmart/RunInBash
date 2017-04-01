@@ -82,7 +82,9 @@ int _tmain(int argc, TCHAR *argv[])
 	TCHAR currentDir[MAX_PATH] = { 0 };
 	GetCurrentDirectory(_countof(currentDir), currentDir);
 
+#ifdef _DEBUG
 	_ftprintf(stderr, _T("> %s\n"), lpArg);
+#endif
 
 	auto startInfo = STARTUPINFO{ 0 };
 	auto pInfo = PROCESS_INFORMATION{ 0 };
