@@ -97,6 +97,7 @@ int _tmain(int argc, TCHAR *argv[])
 	}
 
 	WaitForSingleObject(pInfo.hProcess, INFINITE);
+	CloseHandle(pInfo.hProcess);
 
     return 0;
 }
