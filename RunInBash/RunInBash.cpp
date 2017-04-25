@@ -89,6 +89,11 @@ int _tmain(int argc, TCHAR *argv[])
 
 	//Get whatever the user entered after our EXE as a single string
 	auto argument = GetArgumentString(argv);
+	if (_tcsclen(argument) == 0)
+	{
+		PrintHelp();
+		ExitProcess(-1);
+	}
 
 	//handle possible arguments
 	if (_tcsicmp(argv[1], _T("-h")) == 0)
