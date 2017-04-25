@@ -2,6 +2,17 @@
 #include <malloc.h>
 #include <memory>
 
+template <typename T> //for both const and non-const
+T *TrimStart(T *string)
+{
+	while (string[0] == _T(' '))
+	{
+		++string;
+	}
+
+	return string;
+}
+
 //There is no CommandLineToArgvA(), so we rely on the caller to pass in argv[]
 template <typename T>
 const TCHAR *GetArgumentString(const T argv)
@@ -11,12 +22,14 @@ const TCHAR *GetArgumentString(const T argv)
 	bool escape = cmdLine[0] == '\'' || cmdLine[0] == '\"';
 	const TCHAR *skipped = cmdLine + _tcsclen(argv[0]) + (escape ? 1 : 0) * 2;
 
-	while (skipped[0] == _T(' '))
-	{
-		++skipped;
-	}
+	return TrimStart(skipped);
+}
 
-	return skipped;
+void PrintHelp()
+{
+	_tprintf_s(_T("RunInBash by NeoSmart Technologies - Copyright 2017\n"));
+	_tprintf_s(_T("Usage: Alias $ to RunInBash.exe and prefix WSL commands with $ to execute. For example:\n"));
+	_tprintf_s(_T("$ uname -a\n"));
 }
 
 const TCHAR *Escape(const TCHAR *string)
@@ -68,8 +81,28 @@ int _tmain(int argc, TCHAR *argv[])
 		return -1;
 	}
 
+#ifdef _DEBUG
+	bool debug = true;
+#else
+	bool debug = false;
+#endif
+
 	//Get whatever the user entered after our EXE as a single string
 	auto argument = GetArgumentString(argv);
+
+	//handle possible arguments
+	if (_tcsicmp(argv[1], _T("-h")) == 0)
+	{
+		PrintHelp();
+		ExitProcess(0);
+	}
+	if (_tcsicmp(argv[1], _T("-v")) == 0)
+	{
+		debug = true;
+		argument = TrimStart(argument + 2);
+	}
+
+	//Escape it to be placed within double quotes
 	auto escaped = Escape(argument);
 
 	TCHAR *format = _T("bash -c \"%s\"");
@@ -82,9 +115,10 @@ int _tmain(int argc, TCHAR *argv[])
 	TCHAR currentDir[MAX_PATH] = { 0 };
 	GetCurrentDirectory(_countof(currentDir), currentDir);
 
-#ifdef _DEBUG
-	_ftprintf(stderr, _T("> %s\n"), lpArg);
-#endif
+	if (debug)
+	{
+		_ftprintf(stderr, _T("> %s\n"), lpArg);
+	}
 
 	auto startInfo = STARTUPINFO{ 0 };
 	auto pInfo = PROCESS_INFORMATION{ 0 };
