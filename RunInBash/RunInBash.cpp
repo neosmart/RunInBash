@@ -134,9 +134,9 @@ int _tmain(int argc, TCHAR *argv[])
 	}
 
 #ifdef _DEBUG
-	bool debug = true;
+	int debug = 2;
 #else
-	bool debug = false;
+	int debugLevel = 0;
 #endif
 
 	//Get whatever the user entered after our EXE as a single string
@@ -155,7 +155,12 @@ int _tmain(int argc, TCHAR *argv[])
 	}
 	if (_tcsicmp(argv[1], _T("-v")) == 0)
 	{
-		debug = true;
+		debugLevel = 1;
+		argument = TrimStart(argument + 2);
+	}
+	if (_tcsicmp(argv[1], _T("-d")) == 0)
+	{
+		debugLevel = 2;
 		argument = TrimStart(argument + 2);
 	}
 
@@ -189,9 +194,13 @@ int _tmain(int argc, TCHAR *argv[])
 	TCHAR currentDir[MAX_PATH] = { 0 };
 	GetCurrentDirectory(_countof(currentDir), currentDir);
 
-	if (debug)
+	if (debugLevel == 2) //full debug, including status redirect path
 	{
 		_ftprintf(stderr, _T("> %s\n"), lpArg);
+	}
+	else if (debugLevel == 1) //print a fake command that represents just what the user (probably) cares about
+	{
+		_ftprintf(stderr, _T("> bash -c \"%s\"\n"), escaped);
 	}
 
 	auto startInfo = STARTUPINFO{ 0 };
