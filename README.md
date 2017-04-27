@@ -2,7 +2,7 @@
 Introduction
 ------------
 
-`RunInBash` is a simple tool designed to make running Linux applications easier and faster under WSL. `RunInBash` simply runs whatever you type after it under a bash shell and pipes the output back to the parent command line. No need to worry about nested quotes, escaping arguments, or anything else! [Read more about `$` and `RunInBash` in the official release notes on our blog](https://neosmart.net/blog/2017/meet-your-new-best-friend-for-wsl/). Binary releases [are available for download on neosmart.net](https://neosmart.net/RunInBash/).
+`RunInBash` is a simple tool designed to make running Linux applications easier and faster under WSL. `RunInBash` simply runs whatever you type after it under a bash shell and pipes the output back to the parent command line. No need to worry about nested quotes, escaping arguments, or anything else! [Read more about `$` and `RunInBash` in the official release notes on our blog](https://neosmart.net/blog/2017/meet-your-new-best-friend-for-wsl/). Binary releases [are available for download on neosmart.net](https://neosmart.net/RunInBash/). Additionally, `RunInBash` also captures the exit code of the executed command, and bubbles it back up to the caller (`bash -c` does not do this).
 
 ## Installation
 
