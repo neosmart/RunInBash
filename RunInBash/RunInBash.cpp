@@ -1,9 +1,11 @@
 #include "stdafx.h"
+#include <cassert>
 #include <memory>
 
 template <typename T> //for both const and non-const
 T *TrimStart(T *str)
 {
+	assert(str != nullptr);
 	while (str[0] == _T(' '))
 	{
 		++str;
@@ -18,8 +20,8 @@ const TCHAR *GetArgumentString(const T argv)
 {
 	const TCHAR *cmdLine = GetCommandLine();
 	
-	bool escape = cmdLine[0] == '\'' || cmdLine[0] == '\"';
-	const TCHAR *skipped = cmdLine + _tcsclen(argv[0]) + (escape ? 1 : 0) * 2;
+	bool escaped = cmdLine[0] == '\'' || cmdLine[0] == '\"';
+	const TCHAR *skipped = cmdLine + _tcsclen(argv[0]) + (escaped ? 1 : 0) * 2;
 
 	return TrimStart(skipped);
 }
@@ -34,15 +36,12 @@ void PrintHelp()
 
 TCHAR *Escape(const TCHAR *string)
 {
-	if (!string)
-	{
-		return nullptr;
-	}
-
+	assert(string != nullptr);
 	int newLength = 1; //terminating null
 	for (size_t i = 0; string[i] != _T('\0'); ++i)
 	{
 		++newLength;
+		//these characters will be escaped, so add room for one slash
 		if (string[i] == _T('"') || string[i] == _T('\\'))
 		{
 			++newLength;
@@ -64,8 +63,7 @@ TCHAR *Escape(const TCHAR *string)
 
 int _tmain(int argc, TCHAR *argv[])
 {
-	const TCHAR *argumentStr = GetArgumentString(argv);
-
+	//for multi-arch (x86/x64) support with one (x86) binary
 	PVOID oldValue;
 	Wow64DisableWow64FsRedirection(&oldValue);
 
@@ -112,14 +110,19 @@ int _tmain(int argc, TCHAR *argv[])
 	}
 
 	//Escape it to be placed within double quotes
-	auto escaped = Escape(argument);
-	int temp = sizeof(escaped);
-	TCHAR *format = _T("bash -c \"%s\"");
-	size_t length = _tcsclen(format) + _tcslen(escaped) + 1;
+	//in a scope to prevent inadvertent use of freed variables
+	TCHAR *lpArg;
+	{
+		auto escaped = Escape(argument);
+		int temp = sizeof(escaped);
+		TCHAR *format = _T("bash -c \"%s\"");
+		size_t length = _tcsclen(format) + _tcslen(escaped) + 1;
 
-	TCHAR *lpArg = (TCHAR *) alloca(sizeof(TCHAR) * length);
-	ZeroMemory(lpArg, sizeof(TCHAR) * length);
-	_stprintf(lpArg, format, escaped);
+		lpArg = (TCHAR *)alloca(sizeof(TCHAR) * length);
+		ZeroMemory(lpArg, sizeof(TCHAR) * length);
+		_stprintf(lpArg, format, escaped);
+		free(escaped);
+	}
 
 	TCHAR currentDir[MAX_PATH] = { 0 };
 	GetCurrentDirectory(_countof(currentDir), currentDir);
@@ -129,8 +132,8 @@ int _tmain(int argc, TCHAR *argv[])
 		_ftprintf(stderr, _T("> %s\n"), lpArg);
 	}
 
-	auto startInfo = STARTUPINFO{ 0 };
-	auto pInfo = PROCESS_INFORMATION{ 0 };
+	auto startInfo = STARTUPINFO { 0 };
+	auto pInfo = PROCESS_INFORMATION { 0 };
 	bool success = CreateProcess(bash, lpArg, nullptr, nullptr, true, 0, nullptr, currentDir, &startInfo, &pInfo);
 
 	if (!success)
@@ -140,7 +143,7 @@ int _tmain(int argc, TCHAR *argv[])
 	}
 
 	WaitForSingleObject(pInfo.hProcess, INFINITE);
-	DWORD bashExitCode = 0;
+	DWORD bashExitCode = -1;
 	while (GetExitCodeProcess(pInfo.hProcess, &bashExitCode) == TRUE)
 	{
 		if (bashExitCode == STILL_ACTIVE)
