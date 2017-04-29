@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include <shlwapi.h>
 #include <memory>
 
 template <typename T> //for both const and non-const
@@ -33,33 +32,6 @@ void PrintHelp()
 	_tprintf_s(_T("$ uname -a\n"));
 }
 
-TCHAR *MakeBashPath(const TCHAR *absolutePath)
-{
-	if (!absolutePath || _tcsclen(absolutePath) < 3 || absolutePath[1] != _T(':') || absolutePath[2] != _T('\\'))
-	{
-		//invalid or non-absolute path
-		return nullptr;
-	}
-
-	//add /mnt/c/ to the beginning and replace all forward slashes with backslashes
-	auto bashPath = (TCHAR *)calloc(_tcsclen(absolutePath) + _tcsclen(_T("/mnt/x/") + 1), sizeof(TCHAR));
-	auto letter = _totlower(absolutePath[0]);
-	_stprintf(bashPath, _T("/mnt/%c/"), letter);
-	for (size_t i = 3, j = _tcsclen(bashPath); absolutePath[i] != _T('\0'); ++i, ++j)
-	{
-		if (absolutePath[i] == _T('\\'))
-		{
-			bashPath[j] = _T('/');
-		}
-		else
-		{
-			bashPath[j] = absolutePath[i];
-		}
-	}
-
-	return bashPath;
-}
-
 TCHAR *Escape(const TCHAR *string)
 {
 	if (!string)
@@ -77,7 +49,7 @@ TCHAR *Escape(const TCHAR *string)
 		}
 	}
 
-	TCHAR *escaped = (TCHAR *)calloc(newLength, sizeof(TCHAR));
+	TCHAR *escaped = (TCHAR *) calloc(newLength, sizeof(TCHAR));
 	for (size_t i = 0, j = 0; string[i] != _T('\0'); ++i, ++j)
 	{
 		if (string[i] == _T('"') || string[i] == _T('\\'))
@@ -88,32 +60,6 @@ TCHAR *Escape(const TCHAR *string)
 	}
 
 	return escaped;
-}
-
-int GetExitCode(const TCHAR *statusPath)
-{
-	auto hFile = CreateFile(statusPath, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
-	if (hFile == INVALID_HANDLE_VALUE || hFile == nullptr)
-	{
-		//file does not exist
-		return -1;
-	}
-
-	char buffer[128];
-	DWORD bytesRead = 0;
-	ReadFile(hFile, buffer, sizeof(buffer) - 1, &bytesRead, nullptr);
-	if (bytesRead == 0)
-	{
-		//file was empty
-		CloseHandle(hFile);
-		return -1;
-	}
-	buffer[bytesRead] = '\0';
-
-	int exitCode = atoi(buffer);
-
-	CloseHandle(hFile);
-	return exitCode;
 }
 
 int _tmain(int argc, TCHAR *argv[])
@@ -135,7 +81,7 @@ int _tmain(int argc, TCHAR *argv[])
 	}
 
 #ifdef _DEBUG
-	int debug = 2;
+	int debugLevel = 1;
 #else
 	int debugLevel = 0;
 #endif
@@ -165,43 +111,22 @@ int _tmain(int argc, TCHAR *argv[])
 		argument = TrimStart(argument + 2);
 	}
 
-	//path to file where status code will be written
-	TCHAR tempPath[MAX_PATH];
-	ExpandEnvironmentStrings(_T("%temp%"), tempPath, _countof(tempPath));
-	TCHAR statusPath[MAX_PATH];
-	GetTempFileName(tempPath, _T("wsl"), 0, statusPath);
-
-	auto bashStatusPath = MakeBashPath(statusPath);
-	if (bashStatusPath == nullptr)
-	{
-		_ftprintf(stderr, _T("Unable to create status output file!\n"));
-		ExitProcess(-1);
-	}
-
 	//Escape it to be placed within double quotes
 	auto escaped = Escape(argument);
 	int temp = sizeof(escaped);
-	//this is a filthy hack that works
-	//if you execute bash -c "xxxx; echo $?" the $? is substituted from the start and always returns 0
-	//we create the $? string by echoing each letter separately, then execute the result to get what we actually want
-	//TCHAR *format = _T("bash -c \"%s; echo -n $? > \\\"%s\\\"\"");
-	TCHAR *format = _T("bash -c \"%s; echo -n `echo -n \$; echo -n ?` > \\\"%s\\\"\"");
-	size_t length = _tcsclen(format) + _tcslen(escaped) + _tcslen(bashStatusPath) + 1;
+	TCHAR *format = _T("bash -c \"%s\"");
+	size_t length = _tcsclen(format) + _tcslen(escaped) + 1;
 
-	TCHAR *lpArg = (TCHAR *)alloca(sizeof(TCHAR) * length);
+	TCHAR *lpArg = (TCHAR *) alloca(sizeof(TCHAR) * length);
 	ZeroMemory(lpArg, sizeof(TCHAR) * length);
-	_stprintf(lpArg, format, escaped, bashStatusPath);
+	_stprintf(lpArg, format, escaped);
 
 	TCHAR currentDir[MAX_PATH] = { 0 };
 	GetCurrentDirectory(_countof(currentDir), currentDir);
 
-	if (debugLevel == 2) //full debug, including status redirect path
+	if (debugLevel >= 1)
 	{
 		_ftprintf(stderr, _T("> %s\n"), lpArg);
-	}
-	else if (debugLevel == 1) //print a fake command that represents just what the user (probably) cares about
-	{
-		_ftprintf(stderr, _T("> bash -c \"%s\"\n"), escaped);
 	}
 
 	auto startInfo = STARTUPINFO{ 0 };
@@ -226,18 +151,7 @@ int _tmain(int argc, TCHAR *argv[])
 		break;
 	}
 
-	int exitCode = 0;
-	if (bashExitCode != 0)
-	{
-		//there was an error during bash execution
-		//pass the exit code through
-		exitCode = bashExitCode;
-	}
-	else
-	{
-		exitCode = GetExitCode(statusPath);
-	}
 	CloseHandle(pInfo.hProcess);
 
-	return exitCode;
+	return bashExitCode;
 }
