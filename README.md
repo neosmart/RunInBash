@@ -41,3 +41,7 @@ And an example of escaping magic at work:
 
 	C:\Users\NeoSmart>$ printf "It's just like \"%s\"!" magic
 	It's just like "magic"!
+
+And here's how `RunInBash` can make advanced `(bash|power)`shell scripting pure joy:
+
+<img src="https://i.imgur.com/dPRRTGa.png" />
