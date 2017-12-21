@@ -42,7 +42,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="RunInBash.ico">
+    <Image Include="../Icon/RunInBash.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
