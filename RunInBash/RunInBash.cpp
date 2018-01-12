@@ -29,7 +29,7 @@ const TCHAR *GetArgumentString(const T argv)
 
 void PrintHelp()
 {
-	_tprintf_s(_T("RunInBash by NeoSmart Technologies - Copyright 2017\n"));
+	_tprintf_s(_T("RunInBash by NeoSmart Technologies - Copyright 2017-2018\n"));
 	_tprintf_s(_T("Easily run command(s) under bash, capturing the exit code.\n"));
 	_tprintf_s(_T("Usage: Alias $ to RunInBash.exe and prefix WSL commands with $ to execute. For example:\n"));
 	_tprintf_s(_T("$ uname -a\n"));
