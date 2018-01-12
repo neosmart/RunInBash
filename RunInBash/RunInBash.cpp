@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <cassert>
 #include <memory>
+#include "ArgHelper.h"
 
 template <typename T> //for both const and non-const
 T *TrimStart(T *str)
@@ -93,24 +94,24 @@ int _tmain(int argc, TCHAR *argv[])
 	}
 
 	//handle possible arguments
-	if (_tcsicmp(argv[1], _T("-h")) == 0)
+	if (is_any_of(argv[1], _T("--help"), _T("-h"), _T("/h"), _T("/help"), _T("/?")))
 	{
 		PrintHelp();
 		ExitProcess(0);
 	}
-	if (_tcsicmp(argv[1], _T("-v")) == 0)
+	if (is_any_of(argv[1], _T("--verbose"), _T("-v"), _T("/verbose"), _T("/v")))
 	{
 		debugLevel = 1;
 		argument = TrimStart(argument + 2);
 	}
-	if (_tcsicmp(argv[1], _T("-d")) == 0)
+	if (is_any_of(argv[1], _T("--debug"), _T("-d"), _T("/debug"), _T("/d")))
 	{
 		debugLevel = 2;
 		argument = TrimStart(argument + 2);
 	}
 
-	//Escape it to be placed within double quotes
-	//in a scope to prevent inadvertent use of freed variables
+	//Escape it to be placed within double quotes.
+	//In a scope to prevent inadvertent use of freed variables
 	TCHAR *lpArg;
 	{
 		auto escaped = Escape(argument);
