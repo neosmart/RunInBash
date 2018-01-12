@@ -19,7 +19,7 @@ template <typename T>
 const TCHAR *GetArgumentString(const T argv)
 {
 	const TCHAR *cmdLine = GetCommandLine();
-	
+
 	bool escaped = cmdLine[0] == '\'' || cmdLine[0] == '\"';
 	const TCHAR *skipped = cmdLine + _tcsclen(argv[0]) + (escaped ? 1 : 0) * 2;
 
