@@ -141,6 +141,8 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="format.h" />
+    <ClInclude Include="tinyformat.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RunInBash.cpp" />

@@ -27,6 +27,12 @@
     <ClInclude Include="ArgHelper.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="format.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyformat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
