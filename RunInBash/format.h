@@ -1,4 +1,5 @@
 #pragma once
+
 #include <sstream>
 #include <stdarg.h>
 #include <string>
@@ -16,14 +17,14 @@
 #define tstream std::stringstream
 #endif
 
-tstring sprintf(const tstring format, ...) {
+inline tstring sprintf(const tstring format, ...) {
     va_list valist;
     va_start(valist, format);
 
     va_list clone1;
     va_copy(clone1, valist);
 
-    // use first clone to find out needed buffer size
+    // use first clone to find out needed buffer size (including null)
     int length = _vsntprintf(nullptr, 0, format.c_str(), clone1) + 1;
     va_end(clone1);
 
@@ -34,6 +35,9 @@ tstring sprintf(const tstring format, ...) {
     // now actually format it
     _vstprintf_s((TCHAR *)result.data(), length, format.c_str(), valist);
     va_end(valist);
+
+    // and drop the trailing null included literally in the data buffer
+    result.resize(length - 1);
 
     return result;
 }

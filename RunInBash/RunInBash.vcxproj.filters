@@ -24,13 +24,16 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ArgHelper.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="format.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="tinyformat.h">
+    <ClInclude Include="Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BashParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PathUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -39,6 +42,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RunInBash.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BashParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PathUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
