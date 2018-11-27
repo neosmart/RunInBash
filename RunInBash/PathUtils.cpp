@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Shlwapi.h>
 #include "Utils.h"
 #include "format.h"
 
@@ -27,8 +28,8 @@ std::wstring TranslatePath(const std::wstring &winPath, bool &fileFound) {
         return L"";
     }
     fileFound = true;
+    auto destAttr = GetFileAttributes(winPath.c_str());
 
-    // Find out needed buffer size. There is a bug in the MSDN documentation for
     // `GetFilePathNameByHandle` is f'd up, if you provide 0 or less than how much is
     // required to store the string, it returns the number of bytes needed to store it
     // INCLUDING the trailing null. But when the call succeeds it returns the number of
@@ -54,15 +55,45 @@ std::wstring TranslatePath(const std::wstring &winPath, bool &fileFound) {
     // Resize to the actual content length without the trailing null.
     finalPath.resize(length);
 
+    bool relativePath = false;
+    // GetFinalPathNameByHandle changes a relative path to an absolute one, so we need to
+    // undo that if the original path was relative.
+    if (PathIsRelative(winPath.c_str())) {
+        wchar_t *currentDir = nullptr;
+        auto cwdLength = GetCurrentDirectory(0, currentDir) + 1;
+        currentDir = (wchar_t *)alloca(cwdLength * sizeof(wchar_t));
+        GetCurrentDirectory(cwdLength, currentDir);
+
+        wchar_t path[MAX_PATH + 1];
+        // PathRelativePathTo does not support the \\?\ prefix prepended by GetFilePathNameByHandle
+        if (PathRelativePathTo(path, currentDir, FILE_ATTRIBUTE_DIRECTORY,
+                               (finalPath.c_str() + _tcsclen(_T(R"(\\?\)"))), destAttr)) {
+            finalPath = path;
+            relativePath = true;
+        }
+    }
+
+    // The behavior of some commands changes depending on whether an argument ends in a trailing
+    // slash or not. Make sure we keep that the way it was.
+    if (winPath.back() == _T('/') || winPath.back() == _T('\\')) {
+        if (finalPath.back() != _T('\\')) {
+            finalPath.push_back(_T('\\'));
+        }
+    } else {
+        if (finalPath.back() == _T('\\')) {
+            finalPath.resize(finalPath.length() - 1);
+        }
+    }
+
     auto ptr = const_cast<wchar_t *>(finalPath.data());
     // Replace all `\` path separators with `/` instead
     // All paths returned by `GetFilePathNameByHandle` are prefixed with \\?\ to
     // bypass MAX_PATH
-    if (StartsWith(finalPath, _T(R"(\\?\)"))) {
+    if (!relativePath && StartsWith(finalPath, _T(R"(\\?\)"))) {
         ptr += _tcsclen(_T(R"(\\?\)"));
     }
 
-    for (size_t i = 0; i < length; ++i) {
+    for (size_t i = 0; i < finalPath.length(); ++i) {
         if (ptr[i] == _T('\\')) {
             ptr[i] = _T('/');
         }
@@ -70,9 +101,11 @@ std::wstring TranslatePath(const std::wstring &winPath, bool &fileFound) {
 
     // Replace the drive letter (e.g. C:) with "/mnt/c"
     // Network paths and \\?\ paths are not supported.
-    if (ptr[0] >= _T('A') && ptr[0] <= _T('z') &&
-        ptr[1] == _T(':')) // this is safe since we assert that length is at
-                           // least 1 + \0 above
+    if (relativePath) {
+        return finalPath;
+    } else if (ptr[0] >= _T('A') && ptr[0] <= _T('z') &&
+               ptr[1] == _T(':')) // this is safe since we assert that length is at
+                                  // least 1 + \0 above
     {
         // buffer[2] is guaranteed valid since buffer[1] is ':'
         // By convention, all drives under /mnt/ are all lower-cased
