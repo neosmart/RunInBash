@@ -93,17 +93,19 @@ std::wstring TranslatePath(const std::wstring &winPath, bool &fileFound) {
         ptr += _tcsclen(_T(R"(\\?\)"));
     }
 
-    for (size_t i = 0; i < finalPath.length(); ++i) {
+    for (size_t i = 0; ptr[i] != _T('\0'); ++i) {
         if (ptr[i] == _T('\\')) {
             ptr[i] = _T('/');
         }
     }
 
-    // Replace the drive letter (e.g. C:) with "/mnt/c"
-    // Network paths and \\?\ paths are not supported.
     if (relativePath) {
         return finalPath;
-    } else if (ptr[0] >= _T('A') && ptr[0] <= _T('z') &&
+    }
+
+    // Replace the drive letter (e.g. C:) with "/mnt/c"
+    // Network paths and \\?\ paths are not supported.
+    if (ptr[0] >= _T('A') && ptr[0] <= _T('z') &&
                ptr[1] == _T(':')) // this is safe since we assert that length is at
                                   // least 1 + \0 above
     {
